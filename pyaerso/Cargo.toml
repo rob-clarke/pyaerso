@@ -1,0 +1,18 @@
+[package]
+name = "pyaerso"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+aerso = { path = "../aerso" }
+
+[dependencies.pyo3]
+version = "0.15.0"
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
+
+[lib]
+name = "pyaerso"
+crate-type = ["cdylib"]

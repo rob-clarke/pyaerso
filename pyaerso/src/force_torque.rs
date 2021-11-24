@@ -1,6 +1,10 @@
+use std::ops::Deref;
+
 use pyo3::prelude::*;
 use pyo3::types::PyLong;
 use pyo3::exceptions;
+
+use aerso::types::{Force,Torque};
 
 #[derive(Copy,Clone,PartialEq)]
 pub enum PyFrame {
@@ -59,6 +63,16 @@ impl PyForce {
     
 }
 
+impl Into<Force> for PyForce {
+    fn into(self) -> Force {
+        match self {
+            PyForce { force, frame } if frame == PyFrame::Body => Force::body(force[0],force[1],force[2]),
+            PyForce { force, frame } if frame == PyFrame::World => Force::world(force[0],force[1],force[2]),
+            _ => { unreachable!(); }
+        }
+    }
+}
+
 #[pyclass(name="Torque")]
 #[derive(Clone)]
 pub struct PyTorque {
@@ -99,8 +113,15 @@ impl PyTorque {
     }
 }
 
-use std::ops::Deref;
-use aerso::types::{Force,Torque};
+impl Into<Torque> for PyTorque {
+    fn into(self) -> Torque {
+        match self {
+            PyTorque { torque, frame } if frame == PyFrame::Body => Torque::body(torque[0],torque[1],torque[2]),
+            PyTorque { torque, frame } if frame == PyFrame::World => Torque::world(torque[0],torque[1],torque[2]),
+            _ => { unreachable!(); }
+        }
+    }
+}
 
 pub fn convert_force_torque(forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>) -> (Vec<Force>,Vec<Torque>) {
     let forces : Vec<Force> = forces_py.iter().map(|v|

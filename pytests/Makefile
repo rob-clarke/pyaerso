@@ -1,7 +1,15 @@
-test: pyaerso.so
+test: ../target/release/libpyaerso.so
+	ln -fs $< pyaerso.so
 	python3 test.py
 
-pyaerso.so: ../pyaerso/src/*
+test-debug: ../target/debug/libpyaerso.so
+	ln -fs $< pyaerso.so
+	python3 test.py
+
+../target/debug/libpyaerso.so: ../pyaerso/src/*
 	cd .. && cargo build
-	
-.PHONY: test
+
+../target/release/libpyaerso.so: ../pyaerso/src/*
+	cd .. && cargo build --release
+
+.PHONY: test test-debug

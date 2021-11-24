@@ -49,7 +49,7 @@ impl PyBody {
         let statevector = aerso::types::StateVector::from_vec(vec![
             position_py[0], position_py[1], position_py[2],
             velocity_py[0], velocity_py[1], velocity_py[2],
-            attitude_py[3], attitude_py[0], attitude_py[1], attitude_py[2],
+            attitude_py[0], attitude_py[1], attitude_py[2], attitude_py[3],
             rates_py[0],    rates_py[1],    rates_py[2]
             ]);
         

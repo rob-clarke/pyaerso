@@ -16,7 +16,7 @@ use crate::models::{
 
 #[pyclass(name="AeroBody",unsendable)]
 pub struct PyAeroBody {
-    aerobody: aerso::AeroBody<f64,WindModelFacade,DensityModelFacade>,
+    pub(crate) aerobody: aerso::AeroBody<f64,WindModelFacade,DensityModelFacade>,
 }
 
 
@@ -27,7 +27,7 @@ impl PyAeroBody {
     /// body: Ref to a Python pyaerso.Body
     /// wind_model: A (string,[*args]) tuple naming a default wind model from aerso, or a Python object with `get_wind` and `step` methods
     /// density_model: A (string,[*args]) tuple naming a default density model from aerso, or a Python object with a `get_density` method
-    #[staticmethod]
+    #[new]
     fn new(body: &PyCell<PyBody>, py_wind_model: Option<Py<PyAny>>, py_density_model: Option<Py<PyAny>>) -> PyResult<PyAeroBody> {
         
         // fn get_named_model<P: pyo3::PyClass + Clone, F: ModelFacade<Box<P>,F>>(pyobject: Py<PyAny>) -> PyResult<F> {

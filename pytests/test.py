@@ -22,7 +22,7 @@ class WindModel:
 wm = WindModel()
 
 body = Body(mass,inertia,position,velocity,attitude,rates)
-vehicle = AeroBody.new(body,wm,("StandardDensity",[]))
+vehicle = AeroBody(body,wm,("StandardDensity",[]))
 
 vehicle.airstate
 

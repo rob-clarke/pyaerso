@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pyaerso
-from pyaerso import AeroBody, Body, Force
+from pyaerso import AffectedBody, AeroEffect, AeroBody, Body, Force, Torque
 
 mass = 1.0
 inertia = [
@@ -21,22 +21,40 @@ class WindModel:
 
 wm = WindModel()
 
+class Lift:
+    def get_effect(self,airstate,rates,input):
+        print(f"airstate: {airstate}")
+        print(f"rates: {rates}")
+        print(f"input: {input}")
+        return (
+            Force.body([0,0,0]),
+            Torque.body([0,0,0])
+            )
+
+class Thrust:
+    def get_thrust(self,power):
+        return -0.0000830488*power**2 + 0.0704307060*power + 0.5996810096
+    
+    def get_effect(self,airstate,rates,input):
+        thrust = self.get_thrust(input[2])
+        return (
+            Force.body([thrust,0,0]),
+            Torque.body([0,0,0])
+            )
+
+
 body = Body(mass,inertia,position,velocity,attitude,rates)
-vehicle = AeroBody(body,wm,("StandardDensity",[]))
+aerobody = AeroBody(body,wm,("StandardDensity",[]))
+vehicle = AffectedBody(aerobody,[Lift(),Thrust()])
 
 vehicle.airstate
-
-thrust = Force.body([4.0,0.0,0.0])
-
-def get_thrust(power):
-    return -0.0000830488*power**2 + 0.0704307060*power + 0.5996810096
 
 print(vehicle.attitude)
 
 deltaT = 0.01
 time = 0
 while vehicle.position[2] < 2000:
-    vehicle.step([thrust],[],deltaT)
+    vehicle.step(deltaT,[0,0,100])
     time += deltaT
 
 print(time)

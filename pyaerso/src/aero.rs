@@ -16,7 +16,7 @@ use crate::models::{
 
 #[pyclass(name="AeroBody",unsendable)]
 pub struct PyAeroBody {
-    pub(crate) aerobody: aerso::AeroBody<f64,WindModelFacade,DensityModelFacade>,
+    pub(crate) aerobody: Option<aerso::AeroBody<f64,WindModelFacade,DensityModelFacade>>,
 }
 
 
@@ -84,48 +84,48 @@ impl PyAeroBody {
         };
         
         Ok(PyAeroBody {
-            aerobody: aerso::AeroBody::with_density_model(
+            aerobody: Some(aerso::AeroBody::with_density_model(
                 (&mut *body.borrow_mut()).body,
                 wind_model,
-                density_model),
+                density_model)),
         })
     }
     
     #[getter]
     fn get_position(&self) -> PyResult<[f64;3]> {
-        Ok(self.aerobody.position().into())
+        Ok(self.aerobody.as_ref().unwrap().position().into())
     }
     
     #[getter]
     fn get_velocity(&self) -> PyResult<[f64;3]> {
-        Ok(self.aerobody.velocity().into())
+        Ok(self.aerobody.as_ref().unwrap().velocity().into())
     }
     
     #[getter]
     fn get_attitude(&self) -> PyResult<[f64;4]> {
-        let q = self.aerobody.attitude();
+        let q = self.aerobody.as_ref().unwrap().attitude();
         Ok([q.i, q.j, q.k, q.w])
     }
     
     #[getter]
     fn get_rates(&self) -> PyResult<[f64;3]> {
-        Ok(self.aerobody.rates().into())
+        Ok(self.aerobody.as_ref().unwrap().rates().into())
     }
     
     #[getter]
     fn get_statevector(&self) -> PyResult<[f64;13]> {
-        Ok(self.aerobody.statevector().into())
+        Ok(self.aerobody.as_ref().unwrap().statevector().into())
     }
     
     #[getter]
     fn get_airstate(&self) -> PyResult<[f64;4]> {
-        let airstate = self.aerobody.get_airstate();
+        let airstate = self.aerobody.as_ref().unwrap().get_airstate();
         Ok([airstate.alpha, airstate.beta, airstate.airspeed, airstate.q])
     }
     
     fn step(&mut self, forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>, delta_t: f64) {
         let (forces,torques) = crate::force_torque::convert_force_torque(forces_py, torques_py);        
-        self.aerobody.step(&forces[..], &torques[..], delta_t);
+        self.aerobody.as_mut().unwrap().step(&forces[..], &torques[..], delta_t);
     }
     
 }

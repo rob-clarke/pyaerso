@@ -11,6 +11,9 @@ mod models;
 mod aero;
 use aero::PyAeroBody;
 
+mod affectors;
+use affectors::{PyAeroEffect,PyAffectedBody};
+
 #[pyclass(name="Frame")]
 struct PyFrameEnum;
 
@@ -30,5 +33,7 @@ fn pyaerso(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTorque>()?;
     m.add_class::<PyFrameEnum>()?;
     m.add_class::<PyAeroBody>()?;
+    m.add_class::<PyAeroEffect>()?;
+    m.add_class::<PyAffectedBody>()?;
     Ok(())
 }

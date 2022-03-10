@@ -99,6 +99,12 @@ impl PyAffectedBody {
         Ok(self.affectedbody.statevector().into())
     }
     
+    #[setter]
+    fn set_statevector(&mut self, state: [f64;13]) -> PyResult<()> {
+        self.affectedbody.set_state(state.into());
+        Ok(())
+    }
+    
     #[getter]
     fn get_airstate(&self) -> PyResult<[f64;4]> {
         let airstate = self.affectedbody.get_airstate();

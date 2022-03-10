@@ -38,6 +38,12 @@ impl PyBody {
         Ok(self.body.statevector().into())
     }
     
+    #[setter]
+    fn set_statevector(&mut self, state: [f64;13]) -> PyResult<()> {
+        self.body.set_state(state.into());
+        Ok(())
+    }
+    
     #[new]
     fn new(mass: f64, inertia_py: Vec<Vec<f64>>, position_py: Vec<f64>, velocity_py: Vec<f64>, attitude_py: Vec<f64>, rates_py: Vec<f64>) -> Self {
         let inertia = aerso::types::Matrix3::new(

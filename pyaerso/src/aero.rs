@@ -117,6 +117,12 @@ impl PyAeroBody {
         Ok(self.aerobody.as_ref().unwrap().statevector().into())
     }
     
+    #[setter]
+    fn set_statevector(&mut self, state: [f64;13]) -> PyResult<()> {
+        self.aerobody.as_mut().unwrap().set_state(state.into());
+        Ok(())
+    }
+    
     #[getter]
     fn get_airstate(&self) -> PyResult<[f64;4]> {
         let airstate = self.aerobody.as_ref().unwrap().get_airstate();

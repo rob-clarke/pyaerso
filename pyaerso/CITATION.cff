@@ -1,0 +1,18 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: pyaerso
+message: Please cite this software using these metadata.
+type: software
+authors:
+  - given-names: Robert
+    email: robert.clarke@bristol.ac.uk
+    affiliation: University of Bristol
+    family-names: Clarke
+    orcid: 'https://orcid.org/0000-0002-5485-2992'
+repository-code: 'https://github.com/rob-clarke/pyaerso'
+abstract: >-
+  A Rust-backed Python module for flight dynamics
+  simulations
+license: MIT

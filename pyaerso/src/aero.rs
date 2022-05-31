@@ -65,6 +65,7 @@ impl PyAeroBody {
         fn get_densitymodel(pyobject: Py<PyAny>) -> PyResult<DensityModelFacade> {
             if let Ok((modelname,_)) = Python::with_gil(|py| pyobject.extract::<(String,Vec<f64>)>(py)) {
                 return match modelname.as_str() {
+                    "ConstantDensity" => Ok(DensityModelFacade { model: Box::new(aerso::density_models::ConstantDensity {}) }),
                     "StandardDensity" => Ok(DensityModelFacade { model: Box::new(aerso::density_models::StandardDensity {}) }),
                     _ => Err(pyo3::exceptions::PyValueError::new_err("Unknown density model name")),
                 }

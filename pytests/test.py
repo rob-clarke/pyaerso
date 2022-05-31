@@ -2,14 +2,13 @@
 
 import math
 
-import pyaerso
-from pyaerso import AffectedBody, AeroEffect, AeroBody, Body, Force, Torque
+from pyaerso import AffectedBody, AeroBody, Body, Force, Torque
 
 mass = 1.0
 inertia = [
-    [1.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0],
-    [0.0, 0.0, 1.0]]
+    [0.1, 0.0, 0.0],
+    [0.0, 0.1, 0.0],
+    [0.0, 0.0, 0.1]]
 position = [0.0,0.0,0.0]
 velocity = [0.0,0.0,0.0]
 attitude = [0.0,0.0,0.0,1.0]
@@ -23,16 +22,10 @@ class WindModel:
 
 class Lift:
     def get_effect(self,airstate,rates,input):
-        # print(f"airstate: {airstate}")
-        # print(f"rates: {rates}")
-        # print(f"input: {input}")
         alpha = (airstate[0]/math.pi)*180.0
         q = airstate[3]
         c_l = -(1.0/6500.0)*alpha**3 + 0.1*alpha if abs(alpha) < 20.0 else math.copysign(0.5,alpha)
         lift = q * 0.3 * c_l
-        # print(f"Alpha: {alpha}")
-        # print(f"C_l: {c_l}")
-        # print(f"Lift: {lift}")
         return (
             Force.body([0,0,-lift]),
             Torque.body([0,0,0])
@@ -44,7 +37,6 @@ class Drag:
         q = airstate[3]
         c_d = (1/1300.0)*(alpha-2)**2 + 0.07 if abs(alpha) < 20.0 else 0.3
         drag = q * 0.3 * c_d
-        # print(f"Drag: {drag}")
         return (
             Force.body([-drag,0,0]),
             Torque.body([0,0,0])
@@ -56,7 +48,6 @@ class Thrust:
     
     def get_effect(self,airstate,rates,input):
         thrust = self.get_thrust(input[2])
-        # print(f"Thrust: {thrust}")
         return (
             Force.body([thrust,0,0]),
             Torque.body([0,0,0])
@@ -75,7 +66,6 @@ deltaT = 0.01
 time = 0
 time_limit = 5*2000
 while time < time_limit:
-    #print(vehicle.velocity)
     vehicle.step(deltaT,[0,0,200])
     time += deltaT
 

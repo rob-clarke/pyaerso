@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 
+use crate::types::DefaultFloatRepr as FpR;
+
 use aerso::{
     DensityModel,
     types::Vector3
@@ -11,7 +13,7 @@ pub(crate) struct PyDensityModel {
 }
 
 impl DensityModel for PyDensityModel {
-    fn get_density(&self, position: &Vector3) -> f64 {
+    fn get_density(&self, position: &Vector3) -> FpR {
         let position_py = [position[0],position[1],position[2]];
         Python::with_gil(|py| {
             let pyresult = self.model.call_method1(py,"get_density",(position_py,));

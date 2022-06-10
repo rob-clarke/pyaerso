@@ -10,6 +10,7 @@ aerso = { path = "../aerso" }
 version = "0.15.0"
 
 [features]
+single-precision = ["aerso/single-precision"]
 extension-module = ["pyo3/extension-module"]
 default = ["extension-module"]
 

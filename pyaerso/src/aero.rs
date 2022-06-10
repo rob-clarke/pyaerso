@@ -1,13 +1,13 @@
 use pyo3::prelude::*;
 
-use crate::PyBody;
-
 use aerso::types::{
     Vector3,
     StateView
 };
 
+use crate::types::DefaultFloatRepr as FpR;
 use crate::{PyForce,PyTorque};
+use crate::PyBody;
 
 use crate::models::{
     PyWindModel,WindModelFacade,
@@ -16,7 +16,7 @@ use crate::models::{
 
 #[pyclass(name="AeroBody",unsendable)]
 pub struct PyAeroBody {
-    pub(crate) aerobody: Option<aerso::AeroBody<f64,WindModelFacade,DensityModelFacade>>,
+    pub(crate) aerobody: Option<aerso::AeroBody<FpR,WindModelFacade,DensityModelFacade>>,
 }
 
 
@@ -41,7 +41,7 @@ impl PyAeroBody {
         // }
         
         fn get_windmodel(pyobject: Py<PyAny>) -> PyResult<WindModelFacade> {
-            if let Ok((modelname,margs)) = Python::with_gil(|py| pyobject.extract::<(String,Vec<f64>)>(py)) {
+            if let Ok((modelname,margs)) = Python::with_gil(|py| pyobject.extract::<(String,Vec<FpR>)>(py)) {
                 return match modelname.as_str() {
                     "ConstantWind" => {
                         if margs.len() < 3 { Err(pyo3::exceptions::PyValueError::new_err("ConstantWind takes 3 arguments")) }
@@ -63,7 +63,7 @@ impl PyAeroBody {
         }
         
         fn get_densitymodel(pyobject: Py<PyAny>) -> PyResult<DensityModelFacade> {
-            if let Ok((modelname,_)) = Python::with_gil(|py| pyobject.extract::<(String,Vec<f64>)>(py)) {
+            if let Ok((modelname,_)) = Python::with_gil(|py| pyobject.extract::<(String,Vec<FpR>)>(py)) {
                 return match modelname.as_str() {
                     "ConstantDensity" => Ok(DensityModelFacade { model: Box::new(aerso::density_models::ConstantDensity {}) }),
                     "StandardDensity" => Ok(DensityModelFacade { model: Box::new(aerso::density_models::StandardDensity {}) }),
@@ -93,44 +93,44 @@ impl PyAeroBody {
     }
     
     #[getter]
-    fn get_position(&self) -> PyResult<[f64;3]> {
+    fn get_position(&self) -> PyResult<[FpR;3]> {
         Ok(self.aerobody.as_ref().unwrap().position().into())
     }
     
     #[getter]
-    fn get_velocity(&self) -> PyResult<[f64;3]> {
+    fn get_velocity(&self) -> PyResult<[FpR;3]> {
         Ok(self.aerobody.as_ref().unwrap().velocity().into())
     }
     
     #[getter]
-    fn get_attitude(&self) -> PyResult<[f64;4]> {
+    fn get_attitude(&self) -> PyResult<[FpR;4]> {
         let q = self.aerobody.as_ref().unwrap().attitude();
         Ok([q.i, q.j, q.k, q.w])
     }
     
     #[getter]
-    fn get_rates(&self) -> PyResult<[f64;3]> {
+    fn get_rates(&self) -> PyResult<[FpR;3]> {
         Ok(self.aerobody.as_ref().unwrap().rates().into())
     }
     
     #[getter]
-    fn get_statevector(&self) -> PyResult<[f64;13]> {
+    fn get_statevector(&self) -> PyResult<[FpR;13]> {
         Ok(self.aerobody.as_ref().unwrap().statevector().into())
     }
     
     #[setter]
-    fn set_statevector(&mut self, state: [f64;13]) -> PyResult<()> {
+    fn set_statevector(&mut self, state: [FpR;13]) -> PyResult<()> {
         self.aerobody.as_mut().unwrap().set_state(state.into());
         Ok(())
     }
     
     #[getter]
-    fn get_airstate(&self) -> PyResult<[f64;4]> {
+    fn get_airstate(&self) -> PyResult<[FpR;4]> {
         let airstate = self.aerobody.as_ref().unwrap().get_airstate();
         Ok([airstate.alpha, airstate.beta, airstate.airspeed, airstate.q])
     }
     
-    fn step(&mut self, forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>, delta_t: f64) {
+    fn step(&mut self, forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>, delta_t: FpR) {
         let (forces,torques) = crate::force_torque::convert_force_torque(forces_py, torques_py);        
         self.aerobody.as_mut().unwrap().step(&forces[..], &torques[..], delta_t);
     }

@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use aerso::{AeroEffect,AirState};
 use aerso::types::{Vector3,Force,Torque,StateView};
 
+use crate::types::DefaultFloatRepr as FpR;
 use crate::{PyForce,PyTorque};
 
 #[pyclass(name="AeroEffect")]
@@ -10,8 +11,8 @@ pub(crate) struct PyAeroEffect {
     pyobj: Py<PyAny>,
 }
 
-impl AeroEffect<Vec<f64>> for PyAeroEffect {
-    fn get_effect(&self, airstate: AirState, rates: Vector3, inputstate: &Vec<f64>) -> (Force,Torque) {
+impl AeroEffect<Vec<FpR>> for PyAeroEffect {
+    fn get_effect(&self, airstate: AirState, rates: Vector3, inputstate: &Vec<FpR>) -> (Force,Torque) {
         let airstate_py = [airstate.alpha,airstate.beta,airstate.airspeed,airstate.q];
         let rates_py = [rates.x,rates.y,rates.z];
         
@@ -53,7 +54,7 @@ use crate::{
 
 #[pyclass(name="AffectedBody",unsendable)]
 pub(crate) struct PyAffectedBody {
-    affectedbody: aerso::AffectedBody<Vec<f64>,f64,WindModelFacade,DensityModelFacade>,
+    affectedbody: aerso::AffectedBody<Vec<FpR>,FpR,WindModelFacade,DensityModelFacade>,
 }
 
 #[pymethods]
@@ -69,44 +70,44 @@ impl PyAffectedBody {
         })
     }
     
-    pub fn step(&mut self, delta_t: f64, input: Vec<f64>) {
+    pub fn step(&mut self, delta_t: FpR, input: Vec<FpR>) {
         self.affectedbody.step(delta_t, &input)
     }
     
     #[getter]
-    fn get_position(&self) -> PyResult<[f64;3]> {
+    fn get_position(&self) -> PyResult<[FpR;3]> {
         Ok(self.affectedbody.position().into())
     }
     
     #[getter]
-    fn get_velocity(&self) -> PyResult<[f64;3]> {
+    fn get_velocity(&self) -> PyResult<[FpR;3]> {
         Ok(self.affectedbody.velocity().into())
     }
     
     #[getter]
-    fn get_attitude(&self) -> PyResult<[f64;4]> {
+    fn get_attitude(&self) -> PyResult<[FpR;4]> {
         let q = self.affectedbody.attitude();
         Ok([q.i, q.j, q.k, q.w])
     }
     
     #[getter]
-    fn get_rates(&self) -> PyResult<[f64;3]> {
+    fn get_rates(&self) -> PyResult<[FpR;3]> {
         Ok(self.affectedbody.rates().into())
     }
     
     #[getter]
-    fn get_statevector(&self) -> PyResult<[f64;13]> {
+    fn get_statevector(&self) -> PyResult<[FpR;13]> {
         Ok(self.affectedbody.statevector().into())
     }
     
     #[setter]
-    fn set_statevector(&mut self, state: [f64;13]) -> PyResult<()> {
+    fn set_statevector(&mut self, state: [FpR;13]) -> PyResult<()> {
         self.affectedbody.set_state(state.into());
         Ok(())
     }
     
     #[getter]
-    fn get_airstate(&self) -> PyResult<[f64;4]> {
+    fn get_airstate(&self) -> PyResult<[FpR;4]> {
         let airstate = self.affectedbody.get_airstate();
         Ok([airstate.alpha, airstate.beta, airstate.airspeed, airstate.q])
     }

@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use aerso::types::StateView;
 
 use crate::{PyForce,PyTorque};
+use crate::types::DefaultFloatRepr as FpR;
 
 #[pyclass(name="Body")]
 pub struct PyBody {
@@ -13,39 +14,39 @@ pub struct PyBody {
 impl PyBody {
     
     #[getter]
-    fn get_position(&self) -> PyResult<[f64;3]> {
+    fn get_position(&self) -> PyResult<[FpR;3]> {
         Ok(self.body.position().into())
     }
     
     #[getter]
-    fn get_velocity(&self) -> PyResult<[f64;3]> {
+    fn get_velocity(&self) -> PyResult<[FpR;3]> {
         Ok(self.body.velocity().into())
     }
     
     #[getter]
-    fn get_attitude(&self) -> PyResult<[f64;4]> {
+    fn get_attitude(&self) -> PyResult<[FpR;4]> {
         let q = self.body.attitude();
         Ok([q.i, q.j, q.k, q.w])
     }
     
     #[getter]
-    fn get_rates(&self) -> PyResult<[f64;3]> {
+    fn get_rates(&self) -> PyResult<[FpR;3]> {
         Ok(self.body.rates().into())
     }
     
     #[getter]
-    fn get_statevector(&self) -> PyResult<[f64;13]> {
+    fn get_statevector(&self) -> PyResult<[FpR;13]> {
         Ok(self.body.statevector().into())
     }
     
     #[setter]
-    fn set_statevector(&mut self, state: [f64;13]) -> PyResult<()> {
+    fn set_statevector(&mut self, state: [FpR;13]) -> PyResult<()> {
         self.body.set_state(state.into());
         Ok(())
     }
     
     #[new]
-    fn new(mass: f64, inertia_py: Vec<Vec<f64>>, position_py: Vec<f64>, velocity_py: Vec<f64>, attitude_py: Vec<f64>, rates_py: Vec<f64>) -> Self {
+    fn new(mass: FpR, inertia_py: Vec<Vec<FpR>>, position_py: Vec<FpR>, velocity_py: Vec<FpR>, attitude_py: Vec<FpR>, rates_py: Vec<FpR>) -> Self {
         let inertia = aerso::types::Matrix3::new(
             inertia_py[0][0],inertia_py[1][0],inertia_py[2][0],
             inertia_py[0][1],inertia_py[1][1],inertia_py[2][1],
@@ -64,7 +65,7 @@ impl PyBody {
         }
     }
     
-    fn step(&mut self, forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>, delta_t: f64) {
+    fn step(&mut self, forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>, delta_t: FpR) {
         let (forces,torques) = crate::force_torque::convert_force_torque(forces_py, torques_py);        
         self.body.step(&forces[..], &torques[..], delta_t);
     }

@@ -1,3 +1,5 @@
+use crate::types::DefaultFloatRepr as FpR;
+
 mod windmodel;
 mod densitymodel;
 
@@ -21,7 +23,7 @@ impl WindModel for WindModelFacade {
     fn get_wind(&self, position: &Vector3) -> Vector3 {
         self.model.get_wind(position)
     }
-    fn step(&mut self, delta_t: f64) {
+    fn step(&mut self, delta_t: FpR) {
         self.model.step(delta_t)
     }
 }
@@ -39,7 +41,7 @@ pub(crate) struct DensityModelFacade {
 }
 
 impl DensityModel for DensityModelFacade {
-    fn get_density(&self, position: &Vector3) -> f64 {
+    fn get_density(&self, position: &Vector3) -> FpR {
         self.model.get_density(position)
     }
 }

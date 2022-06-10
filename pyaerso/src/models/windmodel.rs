@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 
+use crate::types::DefaultFloatRepr as FpR;
+
 use aerso::{
     WindModel,
     types::Vector3
@@ -13,7 +15,7 @@ pub(crate) struct PyWindModel {
 impl WindModel for PyWindModel {
     fn get_wind(&self, position: &Vector3) -> Vector3 {
         let position_py = [position[0],position[1],position[2]];
-        let pyvec: [f64;3] = Python::with_gil(|py| {
+        let pyvec: [FpR;3] = Python::with_gil(|py| {
             let pyresult = self.model.call_method1(py,"get_wind",(position_py,));
             if let Err(error) = pyresult {
                 panic!("Error calling `get_wind`: {}",error);
@@ -29,7 +31,7 @@ impl WindModel for PyWindModel {
         Vector3::new(pyvec[0],pyvec[1],pyvec[2])
     }
     
-    fn step(&mut self, delta_t: f64) {
+    fn step(&mut self, delta_t: FpR) {
         Python::with_gil(|py| {
             let pyresult = self.model.call_method1(py,"step",(delta_t,));
             if let Err(error) = pyresult {

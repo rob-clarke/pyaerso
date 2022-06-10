@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 
+mod types;
+
 mod force_torque;
 use force_torque::{PyForce,PyTorque};
 
@@ -13,6 +15,7 @@ use aero::PyAeroBody;
 
 mod affectors;
 use affectors::{PyAeroEffect,PyAffectedBody};
+
 
 #[pyclass(name="Frame")]
 struct PyFrameEnum;

@@ -5,6 +5,7 @@ use pyo3::types::PyLong;
 use pyo3::exceptions;
 
 use aerso::types::{Force,Torque};
+use crate::types::DefaultFloatRepr as FpR;
 
 #[derive(Copy,Clone,PartialEq)]
 pub enum PyFrame {
@@ -25,12 +26,12 @@ impl<'source> FromPyObject<'source> for PyFrame {
 #[pyclass(name="Force")]
 #[derive(Clone)]
 pub struct PyForce {
-    pub force: Vec<f64>,
+    pub force: Vec<FpR>,
     pub frame: PyFrame,
 }
 
 impl PyForce {
-    fn new(force_py: Vec<f64>, frame_py: PyFrame) -> Self {        
+    fn new(force_py: Vec<FpR>, frame_py: PyFrame) -> Self {        
         PyForce {
             force: vec![force_py[0],force_py[1],force_py[2]],
             frame: frame_py
@@ -42,17 +43,17 @@ impl PyForce {
 impl PyForce {
     
     #[staticmethod]
-    fn world(force_py: Vec<f64>) -> Self {
+    fn world(force_py: Vec<FpR>) -> Self {
         PyForce::new(force_py,PyFrame::World)
     }
     
     #[staticmethod]
-    fn body(force_py: Vec<f64>) -> Self {
+    fn body(force_py: Vec<FpR>) -> Self {
         PyForce::new(force_py,PyFrame::Body)
     }
     
     #[getter]
-    fn force(&self) -> Vec<f64> {
+    fn force(&self) -> Vec<FpR> {
         vec![self.force[0],self.force[1],self.force[2]]
     }
     
@@ -76,12 +77,12 @@ impl Into<Force> for PyForce {
 #[pyclass(name="Torque")]
 #[derive(Clone)]
 pub struct PyTorque {
-    pub torque: Vec<f64>,
+    pub torque: Vec<FpR>,
     pub frame: PyFrame,
 }
 
 impl PyTorque {
-    fn new(torque_py: Vec<f64>, frame_py: PyFrame) -> Self {        
+    fn new(torque_py: Vec<FpR>, frame_py: PyFrame) -> Self {        
         PyTorque {
             torque: vec![torque_py[0],torque_py[1],torque_py[2]],
             frame: frame_py,
@@ -93,17 +94,17 @@ impl PyTorque {
 impl PyTorque {
     
     #[staticmethod]
-    fn world(force_py: Vec<f64>) -> Self {
+    fn world(force_py: Vec<FpR>) -> Self {
         PyTorque::new(force_py,PyFrame::World)
     }
     
     #[staticmethod]
-    fn body(force_py: Vec<f64>) -> Self {
+    fn body(force_py: Vec<FpR>) -> Self {
         PyTorque::new(force_py,PyFrame::Body)
     }
     
     #[getter]
-    fn torque(&self) -> Vec<f64> {
+    fn torque(&self) -> Vec<FpR> {
         vec![self.torque[0],self.torque[1],self.torque[2]]
     }
     

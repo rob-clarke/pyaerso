@@ -89,3 +89,11 @@ while time < time_limit:
     vehicle.step(deltaT,[0,0,200])
     time += deltaT
 ```
+
+## `pyaerso_py`
+
+This is a "pure" Python implementation of the module for comparison and educational purposes.
+
+There is likely some further testing to be done.
+
+The interface is *(hopefully)* identical to the Rust-backed version.

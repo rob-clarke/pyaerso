@@ -9,6 +9,18 @@ from .types import Force, Frame, StateView, Torque, list_to_column_vec
 # https://par.nsf.gov/servlets/purl/10097724
 CONSTRAIN_QNORM_DRIFT = False
 
+import os
+USE_NUMPY_CROSSPRODUCT = "NUMPY_XPROD" in os.environ
+if USE_NUMPY_CROSSPRODUCT:
+    cross_prod = np.cross
+else:
+    def cross_prod(a,b,axis=None):
+        return np.array([
+            [a[1,0]*b[2,0] - a[2,0]*b[1,0]],
+            [a[2,0]*b[0,0] - a[0,0]*b[2,0]],
+            [a[0,0]*b[1,0] - a[1,0]*b[0,0]]
+        ])
+
 class Body:
     """Represent a 6DoF body affected by gravity"""
     
@@ -135,7 +147,7 @@ class Body:
         dcm_body = dcm.transpose()
 
         position_dot = dcm_body @ state.velocity
-        velocity_dot = np.cross(state.velocity,state.rates,axis=0) + ( (dcm @ world_forces) + body_forces ) * 1.0/self.mass
+        velocity_dot = cross_prod(state.velocity,state.rates,axis=0) + ( (dcm @ world_forces) + body_forces ) * 1.0/self.mass
         
         [o_x,o_y,o_z] = state.rates[:,0]
         # NB: This matrix appears different from Eq. (21) in the reference due to quaternion ordering
@@ -160,7 +172,7 @@ class Body:
             c = k * (1.0 - qnorm_sqd)
             attitude_dot = 0.5 * qdot_matrix @ q + q * c
         
-        rates_dot = self.inertia_inverse @ (dcm @ world_torques + body_torques - np.cross((self.inertia @ state.rates),state.rates,axis=0) )
+        rates_dot = self.inertia_inverse @ (dcm @ world_torques + body_torques - cross_prod((self.inertia @ state.rates),state.rates,axis=0) )
         
         # print(position_dot)
         # print(velocity_dot)

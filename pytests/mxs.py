@@ -171,8 +171,8 @@ for i in range(samples):
         vehicle.step(deltaT,[0,0,0])
         count += 1
         simtime += deltaT
+        vehicle.statevector
         if outfile:
-            # vehicle.statevector
             outfile.write(f"{simtime},"+sensible(vehicle.statevector,10)[1:-1] + "\n")
     end = time.process_time()
     sample_times.append(end-start)

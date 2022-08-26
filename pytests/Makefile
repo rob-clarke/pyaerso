@@ -1,8 +1,20 @@
+compare: out_rs.csv out_py.csv
+	python ../../plot_compare.py out_rs.csv out_py.csv Rust Python
+
+plot_rs: out_rs.csv
+	python ../../plot_compare.py out_rs.csv out_rs.csv Rust Rust
+
 # Generate output for comparison
-out.csv: ../target/release/libpyaerso.so mxs.py
+out_rs.csv: ../target/release/libpyaerso.so mxs.py
 	-rm pyaerso
 	ln -fs $< pyaerso.so
-	python3 mxs.py out.csv
+	python3 mxs.py out_rs.csv
+
+# Generate Python output
+out_py.csv: ../pyaerso_py/** mxs.py
+	-rm pyaerso.so
+	ln -fsT ../pyaerso_py pyaerso
+	python3 mxs.py out_py.csv
 
 # Rust-backed python version
 test: ../target/release/libpyaerso.so
@@ -11,15 +23,15 @@ test: ../target/release/libpyaerso.so
 	python3 mxs.py
 
 # Python version with re-implemented cross-product
-test-python: ../pyaerso_py
+test-python: ../pyaerso_py/**
 	-rm pyaerso.so
-	ln -fsT $< pyaerso
+	ln -fsT ../pyaerso_py pyaerso
 	python3 mxs.py
 
 # Python version with numpy's cross-product
 test-python-np: ../pyaerso_py
 	-rm pyaerso.so
-	ln -fsT $< pyaerso
+	ln -fsT ../pyaerso_py pyaerso
 	NUMPY_XPROD=true python3 mxs.py
 
 # Rust-back version (debug build)
@@ -29,7 +41,7 @@ test-debug: ../target/debug/libpyaerso.so
 	python3 mxs.py
 
 
-SOURCES:=../pyaerso/src/* ../aerso/src/* ../pyaerso/Cargo.toml ../aerso/Cargo.toml
+SOURCES:=../pyaerso/src/** ../aerso/src/** ../pyaerso/Cargo.toml ../aerso/Cargo.toml
 ../target/debug/libpyaerso.so: $(SOURCES)
 	cd .. && cargo build
 

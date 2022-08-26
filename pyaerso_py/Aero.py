@@ -86,7 +86,7 @@ class StandardDensity(DensityModel):
     
     @staticmethod
     def _get_standard_temperature(altitude: float) -> float:
-        StandardDensity._interp(
+        return StandardDensity._interp(
             altitude,
             StandardDensity.ISA_SL_H, StandardDensity.ISA_11K_H,
             StandardDensity.ISA_SL_T, StandardDensity.ISA_11K_T
@@ -96,17 +96,17 @@ class StandardDensity(DensityModel):
     def _get_standard_pressure(altitude: float) -> float:
         t_0 = StandardDensity.ISA_SL_T
         p_0 = StandardDensity.ISA_SL_P
-        t_a = StandardDensity.get_standard_temperature(altitude)
+        t_a = StandardDensity._get_standard_temperature(altitude)
         lr = StandardDensity.T_LR
         r_dry = StandardDensity.R
         g = 9.81
         
-        p_0 * (t_a/t_0) ** ( g/(lr*r_dry) )
+        return p_0 * (t_a/t_0) ** ( g/(lr*r_dry) )
     
     def get_density(self, position: List[float]) -> float:
         altitude = -position[2]
         r_dry = StandardDensity.R
-        StandardDensity._get_standard_pressure(altitude) / (r_dry * StandardDensity._get_standard_temperature(altitude))
+        return StandardDensity._get_standard_pressure(altitude) / (r_dry * StandardDensity._get_standard_temperature(altitude))
 
 
 @dataclass
@@ -132,7 +132,12 @@ class AeroBody:
         if density_model is None:
             density_model = ConstantDensity()
         elif isinstance(density_model,tuple):
-            density_model = ConstantDensity()
+            name = density_model[0]
+            args = density_model[1]
+            if name == "StandardDensity":
+                density_model = StandardDensity(*args)
+            if name == "ConstantDensity":
+                density_model = ConstantDensity(*args)
         
         self.body = body # The underlying rigid body
         self.wind_model = wind_model # Optional wind model

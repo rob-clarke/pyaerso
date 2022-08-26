@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import numpy as np
@@ -44,6 +45,78 @@ class ConstantWind(WindModel):
     def step(self, delta_t: float) -> None:
         pass
 
+
+class LogWind(WindModel):
+    """
+    Built-in [WindModel] to represent a log wind profile
+    
+    https://en.wikipedia.org/wiki/Log_wind_profile
+    """
+    
+    def __init__(self, d: float, z0: float, u_star: float, bearing: float):
+        """
+        Create a new LogWind with specified parameters
+        
+        # Arguments
+        
+        * `d` - Zero plane displacement (m)
+        * `z0` - Surface roughness (m)
+        * `u_star` - Friction velocity (m·s<sup>-1</sup>)
+        * `bearing` - The bearing for the calculated wind vector (deg)
+        """
+        self.d = d
+        self.z0 = z0
+        self.u_star = u_star
+        self.bearing = bearing
+
+    def get_wind(self, position: List[float]) -> List[float]:
+        k = 0.41
+        velocity = self.u_star/k * math.ln((position[2] - self.d) / self.z0)
+        bearing_rad = math.radians(self.bearing)
+        return [
+            velocity * math.cos(bearing_rad),
+            velocity * math.sin(bearing_rad),
+            0.0
+        ]
+    
+    def step(self, delta_t: float) -> None:
+        pass
+
+
+class PowerWind(WindModel):
+    """
+    Built-in [WindModel] to represent a wind profile power law
+    
+    https://en.wikipedia.org/wiki/Wind_profile_power_law
+    """
+    
+    def __init__(self, u_r: float, z_r: float, bearing: float, alpha: float):
+        """
+        Create a new [PowerWind] model with specified parameters
+
+        # Arguments
+
+        * `u_r` - Reference wind speed (m·s<sup>-1</sup>) 
+        * `z_r` - Reference wind height (m)
+        * `bearing` - The bearing for the calculated wind vector (deg)
+        * `alpha` - Power law exponent (Typically 0.143)
+        """
+        self.u_r = u_r
+        self.z_r = z_r
+        self.bearing = bearing
+        self.alpha = alpha
+
+    def get_wind(self, position: List[float]) -> List[float]:
+        velocity = self.u_r * math.pow(position[2] / self.z, self.alpha)
+        bearing_rad = math.radians(self.bearing)
+        return [
+            velocity * math.cos(bearing_rad),
+            velocity * math.sin(bearing_rad),
+            0.0
+        ]
+    
+    def step(self, delta_t: float) -> None:
+        pass
 
 class DensityModel(ABC):
     """Trait for general density model"""
@@ -127,7 +200,14 @@ class AeroBody:
         if wind_model is None:
             wind_model = ConstantWind( np.zeros((3,1)) )
         elif isinstance(wind_model,tuple):
-            wind_model = ConstantWind( np.zeros((3,1)) )
+            name = wind_model[0]
+            args = wind_model[1]
+            if name == "ConstantWind":
+                wind_model = ConstantWind([*args])
+            if name == "LogWind":
+                wind_model = LogWind(*args)
+            if name == "PowerWind":
+                wind_model = PowerWind(*args)
         
         if density_model is None:
             density_model = ConstantDensity()

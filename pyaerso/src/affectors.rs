@@ -70,6 +70,11 @@ impl PyAffectedBody {
         })
     }
     
+    pub fn get_derivative(&self, py_state: [FpR;13], input: Vec<FpR>) -> PyResult<[FpR;13]>{
+        let state = aerso::types::StateVector::from_vec(Vec::from(py_state));
+        Ok(self.affectedbody.get_derivative(&state, &input).into())
+    }
+    
     pub fn step(&mut self, delta_t: FpR, input: Vec<FpR>) {
         self.affectedbody.step(delta_t, &input)
     }

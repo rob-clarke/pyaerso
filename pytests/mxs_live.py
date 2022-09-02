@@ -7,21 +7,15 @@ from numpy import mean, var
 import pyaerso
 from pyaerso import AffectedBody, AeroEffect, AeroBody, Body, Force, Torque
 
-def calc_state(alpha,airspeed,combined=True):
-    u = airspeed * math.cos(alpha)
-    w = airspeed * math.sin(alpha)
-    orientation = [0, math.sin(alpha/2), 0, math.cos(alpha/2)]
-    if combined:
-        return [0,0,0, u,0,w, *orientation, 0,0,0]
-    else:
-        return [0,0,0], [u,0,w], orientation, [0,0,0]
-
 mass = 2.0
 inertia = [
     [0.05, 0.0, 0.0],
     [0.0, 0.05, 0.0],
     [0.0, 0.0, 0.07]]
-position,velocity,attitude,rates = calc_state(math.radians(1.574843803119151),20,False)
+position = [0.0,0.0,-500.0]
+velocity = [13.0,0.0,0.0]
+attitude = [0.0,0.0,0.0,1.0]
+rates = [0.0,0.0,0.0]
 
 class WindModel:
     def get_wind(self,position):
@@ -213,67 +207,90 @@ aerobody = AeroBody(body,None,DensityModel())
 # vehicle = AffectedBody(aerobody,[Lift(),Drag(),Moment()])
 vehicle = AffectedBody(aerobody,[Combined()])
 
-# Trim points (airspeed(m/s),alpha(deg),elev(deg),throttle)
-trim_points = [
-    (25, 0.37332, -0.66778, 0.69861),
-    (22, 0.99455,  6.10519, 0.53267),
-    (20, 1.57484, 12.82050, 0.43469),
-    (18, 2.36322, 23.30558, 0.35143),
-]
-
 # print(vehicle.airstate)
-if __name__ == "__main__":
-    scale = 2
-    deltaT = 0.01/scale
 
-    print(sensible(vehicle.statevector))
+scale = 2
+deltaT = 0.01/scale
 
-    import sys
-    import time
+print(sensible(vehicle.statevector))
 
-    outfile = None
-    if len(sys.argv) > 1:
-        outfile = open(sys.argv[1],"w")
-        outfile.write("time,x,y,z,u,v,w,qx,qy,qz,qw,p,q,r,alpha\n")
+import sys
+import time
 
-    samples = 1
-    sample_times = []
+outfile = None
+if len(sys.argv) > 1:
+    outfile = open(sys.argv[1],"w")
+    outfile.write("time,x,y,z,u,v,w,qx,qy,qz,qw,p,q,r,alpha\n")
 
-    def get_elevator_input(count):
-        TRIM_ELEVATOR = 12.82
-        if count < 500*scale:
-            return math.radians(TRIM_ELEVATOR)
-        if count < 550*scale:
-            return math.radians(TRIM_ELEVATOR+5.0)
-        if count < 600*scale:
-            return math.radians(TRIM_ELEVATOR-5.0)
-        
-        return math.radians(TRIM_ELEVATOR)
+samples = 1
+sample_times = []
 
-    for i in range(samples):
-        count = 0
-        simtime = 0
-        
-        body = Body(mass,inertia,position,velocity,attitude,rates)
-        # aerobody = AeroBody(body,None,DensityModel())
-        aerobody = AeroBody(body,None,("StandardDensity",[]))
-        vehicle = AffectedBody(aerobody,[Combined()])
-        
-        start = time.process_time()
-        while count < 3000*scale:
-            elevator = get_elevator_input(count)
-            # throttle = 0.7687
-            throttle = 0.4347
-            vehicle.step(deltaT,[0,elevator,throttle])
-            count += 1
-            simtime += deltaT
-            vehicle.statevector
-            if outfile:
-                outfile.write(f"{simtime},"+sensible(vehicle.statevector,10)[1:-1] + f",{vehicle.airstate[0]}\n")
-        end = time.process_time()
-        sample_times.append(end-start)
-        print(sensible(vehicle.statevector))
+count = 0
+simtime = 0
 
-    print(f"Mean: {mean(sample_times)}\nVar: {var(sample_times)}")
-    if outfile is not None:
-        outfile.close()
+body = Body(mass,inertia,position,velocity,attitude,rates)
+aerobody = AeroBody(body,None,("StandardDensity",[]))
+vehicle = AffectedBody(aerobody,[Combined()])
+
+frameInterval = 20
+
+times = []
+airspeeds = []
+qs = []
+xs = []
+zs = []
+
+steps_per_frame = (frameInterval/1000)/deltaT
+
+def render(frame, *args):
+    for i in range(round(steps_per_frame)):
+        global count
+        global simtime
+        elevator = (0.0/180.0)*math.pi if count < 500*scale else ( (5.0/180.0)*math.pi if count < 900*scale else (0.0/180.0)*math.pi )
+        # throttle = 0.7687
+        throttle = 0.78
+        vehicle.step(deltaT,[0,elevator,throttle])
+        count += 1
+        simtime += deltaT
+    times.append(simtime)
+    airspeeds.append(vehicle.airstate[2])
+    xs.append(vehicle.statevector[0])
+    zs.append(-vehicle.statevector[2])
+    qs.append(math.degrees(vehicle.statevector[11]))
+    
+    [position_trace, airspeed_trace, q_trace] = args
+    
+    position_trace.set_xdata(xs)
+    position_trace.set_ydata(zs)
+    
+    airspeed_trace.set_xdata(times)
+    airspeed_trace.set_ydata(airspeeds)
+
+    q_trace.set_xdata(times)
+    q_trace.set_ydata(qs)
+
+    return [position_trace, airspeed_trace, q_trace]
+
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+fig, axs = plt.subplots(2,2)
+axs[0,0].set_xlim(0,200)
+axs[0,0].set_ylim(200,700)
+axs[0,0].axis('equal')
+axs[0,0].grid('both')
+
+axs[0,1].set_xlim(0,60)
+axs[0,1].set_ylim(0,40)
+axs[0,1].grid('both')
+
+axs[1,0].set_xlim(0,60)
+axs[1,0].set_ylim(-90,90)
+axs[1,0].grid('both')
+
+position_trace, = axs[0,0].plot(xs,zs)
+airspeed_trace, = axs[0,1].plot(times,airspeeds)
+q_trace, = axs[1,0].plot(times,qs)
+ani = animation.FuncAnimation(fig, render, interval=frameInterval, fargs=[position_trace, airspeed_trace, q_trace], blit=True)
+
+plt.show()

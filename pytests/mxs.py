@@ -4,8 +4,7 @@ import math
 
 from numpy import mean, var
 
-import pyaerso
-from pyaerso import AffectedBody, AeroEffect, AeroBody, Body, Force, Torque
+from pyaerso import AffectedBody, AeroBody, Body, Force, Torque
 
 def calc_state(alpha,airspeed,combined=True):
     u = airspeed * math.cos(alpha)
@@ -16,12 +15,27 @@ def calc_state(alpha,airspeed,combined=True):
     else:
         return [0,0,0], [u,0,w], orientation, [0,0,0]
 
-mass = 2.0
+# Trim points airspeed(m/s): (alpha(deg),elev(deg),throttle)
+trim_points = {
+    15:   ( 1.8610581489255968, -4.140861051989625, 0.24558680238966624),
+    17.5: ( 0.8976176429016834, -4.516975343674682, 0.3276555585151719 ),
+    20:   ( 0.2752222419858703, -4.971202946428634, 0.43677009677378154),
+    22.5: (-0.1504723301850493, -5.393110395100422, 0.5652627563526715 ),
+    25:   (-0.454536873816682,  -5.481740108723346, 0.7069739379498428 )
+}
+
+selected_trim_point = 15
+
+mass = 1.221
 inertia = [
-    [0.05, 0.0, 0.0],
-    [0.0, 0.05, 0.0],
-    [0.0, 0.0, 0.07]]
-position,velocity,attitude,rates = calc_state(math.radians(1.574843803119151),20,False)
+    [0.019, 0.0,   0.0],
+    [0.0,   0.09, 0.0],
+    [0.0,   0.0,   0.121]]
+position,velocity,attitude,rates = calc_state(
+    math.radians(trim_points[selected_trim_point][0]),
+    selected_trim_point,
+    False
+)
 
 class WindModel:
     def get_wind(self,position):
@@ -33,6 +47,7 @@ import isacalc
 
 class DensityModel:
     def get_density(self,position):
+        return 1.225
         [_,_,density,_,_] = isacalc.calculate_at_h(-position[2])
         return density
 
@@ -50,53 +65,6 @@ cw = 0.24
 S_t = 0.0825
 x_t = -0.585
 c_t = 0.165
-
-class Lift:
-    def get_effect(self,airstate,rates,input):
-        alpha = airstate[0]
-        c_l = S(alpha,-0.34,0.2719) * (0.1615 + 5.2212*alpha)
-        
-        q = airstate[3]
-        lift = q * Sw * c_l
-        
-        return (
-            Force.body([0,0,-lift]),
-            Torque.body([0,0,0])
-            )
-
-class Drag:
-    def get_effect(self,airstate,rates,input):
-        alpha = airstate[0]
-        a_lim = deg2rad(30)
-        c_d = S(alpha,-a_lim,a_lim)*(2.3814*(alpha-0.0207)**2+0.0671) + 2*(1-S(alpha,-a_lim,a_lim))
-        
-        q = airstate[3]
-        drag = q * Sw * c_d
-        
-        return (
-            Force.body([-drag,0,0]),
-            Torque.body([0,0,0])
-            )
-
-class Moment:
-    def get_effect(self,airstate,rates,input):
-        alpha = airstate[0]
-        a_lim = deg2rad(15)
-        c_m = S(alpha,-a_lim,a_lim,12) * (-0.5462 * math.tan(1.4151*(alpha-0.0484)) + 0.053) \
-            + 0.5 * (1-H(alpha,-a_lim,12)) - 0.5 * H(alpha,a_lim,12)
-        
-        q = airstate[3]
-        V = airstate[2]
-        
-        alpha_q = math.atan( (-rates[1]*x_t + V*math.sin(alpha)) / (V*math.cos(alpha)) )
-        m_t_aq = x_t * q * S_t * (c_lta(alpha_q) - c_lta(alpha))
-        
-        moment = q * Sw * cw * c_m + m_t_aq
-        
-        return (
-            Force.body([0,0,0]),
-            Torque.body([0,moment,0])
-            )
 
 def c_lta(alpha):
     return 3.5810*S(alpha,-0.1745,0.1745)*alpha \
@@ -171,10 +139,12 @@ class Combined:
         c_d = S(alpha,-a_lim,a_lim)*(2.3814*(alpha-0.0207)**2+0.0671) + 2*(1-S(alpha,-a_lim,a_lim))
         
         a_lim = deg2rad(15)
+        a_lim2 = deg2rad(20)
         c_m = S(alpha,-a_lim,a_lim,12) * (-0.5462 * math.tan(1.4151*(alpha-0.0484)) + 0.053) \
-            + 0.5 * (1-H(alpha,-a_lim,12)) - 0.5 * H(alpha,a_lim,12)
+            + 0.5 * (1-H(alpha,-a_lim,12)) - 0.5 * H(alpha,a_lim,12) \
+            + 5.0 * (1-H(alpha,-a_lim2,12)) - 5.0 * H(alpha,a_lim2,12)
         
-        c_m += x_t * c_lta(alpha) / c_t # * (1-S(alpha,-a_lim,a_lim,12))
+        # c_m += x_t * c_lta(alpha) / c_t # * (1-S(alpha,-a_lim,a_lim,12))
         
         q = airstate[3]
         V = airstate[2]
@@ -193,6 +163,15 @@ class Combined:
         self.time += 0.01
         x = thrust - drag * math.cos(alpha) + lift * math.sin(alpha)
         z = -lift * math.cos(alpha) - drag * math.sin(alpha)
+        
+        # Force and moment fits are found relative to the loadcell point
+        # Computed effect forces/moments should be supplied about CG
+        #x_cg = 0.03 # m
+        #z_cg = -0.016 # m Load cell reference point was 16mm below spar centreline
+        
+        x_cg = 0.03 # m
+        z_cg = -0.016 # m
+        moment = moment - z * x_cg + x * z_cg
         
         return (
             Force.body([x,0.0,z]),
@@ -213,17 +192,9 @@ aerobody = AeroBody(body,None,DensityModel())
 # vehicle = AffectedBody(aerobody,[Lift(),Drag(),Moment()])
 vehicle = AffectedBody(aerobody,[Combined()])
 
-# Trim points (airspeed(m/s),alpha(deg),elev(deg),throttle)
-trim_points = [
-    (25, 0.37332, -0.66778, 0.69861),
-    (22, 0.99455,  6.10519, 0.53267),
-    (20, 1.57484, 12.82050, 0.43469),
-    (18, 2.36322, 23.30558, 0.35143),
-]
-
 # print(vehicle.airstate)
 if __name__ == "__main__":
-    scale = 2
+    scale = 1
     deltaT = 0.01/scale
 
     print(sensible(vehicle.statevector))
@@ -234,21 +205,53 @@ if __name__ == "__main__":
     outfile = None
     if len(sys.argv) > 1:
         outfile = open(sys.argv[1],"w")
-        outfile.write("time,x,y,z,u,v,w,qx,qy,qz,qw,p,q,r,alpha\n")
+        outfile.write("time,x,y,z,u,v,w,qx,qy,qz,qw,p,q,r,alpha,elevator\n")
 
     samples = 1
     sample_times = []
 
-    def get_elevator_input(count):
-        TRIM_ELEVATOR = 12.82
+    TRIM_ELEVATOR = trim_points[selected_trim_point][1]
+    TRIM_THROTTLE = trim_points[selected_trim_point][2]
+
+    def get_doublet_elevator_input(count):
         if count < 500*scale:
-            return math.radians(TRIM_ELEVATOR)
+            return math.radians(TRIM_ELEVATOR), TRIM_THROTTLE
         if count < 550*scale:
-            return math.radians(TRIM_ELEVATOR+5.0)
+            return math.radians(TRIM_ELEVATOR+5.0), TRIM_THROTTLE
         if count < 600*scale:
-            return math.radians(TRIM_ELEVATOR-5.0)
+            return math.radians(TRIM_ELEVATOR-5.0), TRIM_THROTTLE
         
-        return math.radians(TRIM_ELEVATOR)
+        return math.radians(TRIM_ELEVATOR), TRIM_THROTTLE
+
+    def get_loop_input(count):
+        if count < 500*scale:
+            return math.radians(TRIM_ELEVATOR), 0.7
+        if count < 979*scale:
+            return math.radians(TRIM_ELEVATOR+5.0), 0.7
+
+        if count < 1200*scale:
+            return math.radians(TRIM_ELEVATOR), 0.7
+        if count < 1678*scale:
+            return math.radians(TRIM_ELEVATOR+5.0), 0.7
+
+        if count < 1900*scale:
+            return math.radians(TRIM_ELEVATOR), 0.7
+        if count < 2378*scale:
+            return math.radians(TRIM_ELEVATOR+5.0), 0.7
+
+        return math.radians(TRIM_ELEVATOR), 0.7
+
+    def get_elevator_input(count):
+        if count < 500*scale:
+            return math.radians(TRIM_ELEVATOR), TRIM_THROTTLE
+        if count < 600*scale:
+            return math.radians(TRIM_ELEVATOR+2.0), TRIM_THROTTLE
+        # if count < 700*scale:
+        #     return math.radians(TRIM_ELEVATOR), 0.65
+        # if count < 1100*scale:
+        #     return math.radians(TRIM_ELEVATOR+5.0), 0.65
+
+        return math.radians(TRIM_ELEVATOR), TRIM_THROTTLE
 
     for i in range(samples):
         count = 0
@@ -261,15 +264,15 @@ if __name__ == "__main__":
         
         start = time.process_time()
         while count < 3000*scale:
-            elevator = get_elevator_input(count)
-            # throttle = 0.7687
-            throttle = 0.4347
+            # elevator, throttle = get_doublet_elevator_input(count)
+            # elevator, throttle = get_loop_input(count)
+            elevator, throttle = get_elevator_input(count)
             vehicle.step(deltaT,[0,elevator,throttle])
             count += 1
             simtime += deltaT
             vehicle.statevector
             if outfile:
-                outfile.write(f"{simtime},"+sensible(vehicle.statevector,10)[1:-1] + f",{vehicle.airstate[0]}\n")
+                outfile.write(f"{simtime},"+sensible(vehicle.statevector,10)[1:-1] + f",{vehicle.airstate[0]},{elevator}\n")
         end = time.process_time()
         sample_times.append(end-start)
         print(sensible(vehicle.statevector))

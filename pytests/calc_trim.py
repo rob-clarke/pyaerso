@@ -27,6 +27,46 @@ def trim_trial(params,airspeed):
     sum_error, _ = get_trim_error(state, [0, elevator, throttle])
     return sum_error
 
+
+def get_trim_condition(airspeed, debug=False):
+    initial_state = calc_state(math.radians(10),airspeed)
+    initial_input = [0,0,0]
+
+    if debug:
+        print(f"---- {airspeed:4.1f} m/s ----")
+        print(f"{initial_state=}")
+        print(f"initial_error={get_trim_error(initial_state, initial_input)}")
+
+    x0 = [0.02, math.radians(-5), 0.5]
+    bounds = [
+        (-math.radians(10), math.radians(25)),
+        (math.radians(-30), math.radians(30)),
+        (0, 1)
+    ]
+    res = scipy.optimize.minimize(
+        trim_trial,
+        x0,
+        args=(airspeed),
+        bounds=bounds,
+        options={'ftol': 1e-18, 'eps': 1e-9, 'gtol': 1e-9}
+    )
+    
+    [alpha,elevator,throttle] = res.x
+    alpha = math.degrees(alpha)
+    elevator = math.degrees(elevator)
+    
+    if debug:
+        print(res.message)
+        print(f"{alpha=} {elevator=} {throttle=}")
+    
+    trim_state = calc_state(res.x[0],airspeed)
+    
+    if debug:
+        print( get_trim_error(trim_state, [0,*res.x[1:]]) )
+    
+    return (alpha,elevator,throttle)
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 2:
@@ -37,30 +77,7 @@ if __name__ == "__main__":
     trim_states = {}
     
     for airspeed in airspeeds:
-        initial_state = calc_state(math.radians(10),airspeed)
-        initial_input = [0,0,0]
-    
-        print(f"---- {airspeed:4.1f} m/s ----")
-        print(f"{initial_state=}")
-        print(f"initial_error={get_trim_error(initial_state, initial_input)}")
-
-        x0 = [0.02, math.radians(-5), 0.5]
-        bounds = [
-            (0, math.radians(25)),
-            (math.radians(-30), math.radians(30)),
-            (0, 1)
-        ]
-        res = scipy.optimize.minimize(trim_trial,x0,args=(airspeed),bounds=bounds,options={'ftol': 1e-18, 'eps': 1e-9, 'gtol': 1e-9})
-        print(res.message)
-        [alpha,elevator,throttle] = res.x
-        alpha = math.degrees(alpha)
-        elevator = math.degrees(elevator)
-        print(f"{alpha=} {elevator=} {throttle=}")
-        
-        trim_state = calc_state(res.x[0],airspeed)
-        print( get_trim_error(trim_state, [0,*res.x[1:]]) )
-        
-        trim_states[airspeed] = (alpha,elevator,throttle)
+        trim_states[airspeed] = get_trim_condition(airspeed, debug=True)
     
     print("----- Results -----")
     print("{ airspeed: (alpha(deg), elevator(deg), throttle) ... }")

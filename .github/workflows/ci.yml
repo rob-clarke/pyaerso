@@ -27,10 +27,9 @@ jobs:
 
       - name: Build wheels
         uses: messense/maturin-action@v1.30.2
-        working-directory: ./pyaerso
         with:
           manylinux: auto
-          args: --release --out dist
+          args: --release --out dist -m pyaerso/Cargo.toml
 
       - name: Upload wheels
         uses: actions/upload-artifact@v2
@@ -59,9 +58,8 @@ jobs:
 
       - name: Build wheels
         uses: messense/maturin-action@v1.30.2
-        working-directory: ./pyaerso
         with:
-          args: --release --out dist
+          args: --release --out dist -m pyaerso/Cargo.toml
       
       - name: Upload wheels
         uses: actions/upload-artifact@v2

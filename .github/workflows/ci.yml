@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: wheels
-          path: pyaerso/dist
+          path: dist
   
   windows:
     name: Build Windows wheels
@@ -69,4 +69,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: wheels
-          path: pyaerso/dist
+          path: dist

@@ -1,8 +1,8 @@
 import math
 import scipy.optimize
-from mxs import vehicle, calc_state
+from mxs import calc_state
 
-def get_trim_error(state,input):
+def get_trim_error(vehicle, state, input):
     derivative = vehicle.get_derivative(state,input)
     
     z_dot = derivative[2]
@@ -21,21 +21,22 @@ def get_trim_error(state,input):
     
     return sum_error, [z_dot,u_dot,w_dot,orientation_dot,q_dot]
 
-def trim_trial(params,airspeed):
-    [alpha,elevator,throttle] = params
-    state = calc_state(alpha,airspeed)
-    sum_error, _ = get_trim_error(state, [0, elevator, throttle])
-    return sum_error
 
 
-def get_trim_condition(airspeed, debug=False):
+def get_trim_condition(vehicle, airspeed, debug=False):
     initial_state = calc_state(math.radians(10),airspeed)
-    initial_input = [0,0,0]
+    initial_input = [0,0,0,0,0,0]
+
+    def trim_trial(params,airspeed):
+        [alpha,elevator,throttle] = params
+        state = calc_state(alpha,airspeed)
+        sum_error, _ = get_trim_error(vehicle, state, [0, elevator, throttle, 0, 0, 0])
+        return sum_error
 
     if debug:
         print(f"---- {airspeed:4.1f} m/s ----")
         print(f"{initial_state=}")
-        print(f"initial_error={get_trim_error(initial_state, initial_input)}")
+        print(f"initial_error={get_trim_error(vehicle, initial_state, initial_input)}")
 
     x0 = [0.02, math.radians(-5), 0.5]
     bounds = [
@@ -62,7 +63,7 @@ def get_trim_condition(airspeed, debug=False):
     trim_state = calc_state(res.x[0],airspeed)
     
     if debug:
-        print( get_trim_error(trim_state, [0,*res.x[1:]]) )
+        print( get_trim_error(vehicle, trim_state, [0,*res.x[1:],0,0,0]) )
     
     return (alpha,elevator,throttle)
 
@@ -74,10 +75,12 @@ if __name__ == "__main__":
     else:
         airspeeds = [15, 17.5, 20, 22.5, 25]
     
+    from mxs import vehicle
+    
     trim_states = {}
     
     for airspeed in airspeeds:
-        trim_states[airspeed] = get_trim_condition(airspeed, debug=True)
+        trim_states[airspeed] = get_trim_condition(vehicle, airspeed, debug=True)
     
     print("----- Results -----")
     print("{ airspeed: (alpha(deg), elevator(deg), throttle) ... }")

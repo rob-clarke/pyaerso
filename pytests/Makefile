@@ -1,8 +1,16 @@
 compare: out_rs.csv out_py.csv
-	python ../../plot_compare.py out_rs.csv out_py.csv Rust Python
+	python ../../../plot_compare.py out_rs.csv out_py.csv Rust Python
 
 plot_rs: out_rs.csv
-	python ../../plot_compare.py out_rs.csv out_rs.csv Rust Rust
+	python ../../../plot_compare.py out_rs.csv out_rs.csv Rust Rust
+
+plot_bix: out_bixler.csv
+	python ../../../plot_compare.py out_bixler.csv out_bixler.csv Rust Rust
+
+out_bixler.csv: ../target/release/libpyaerso.so bixler.py
+	-rm pyaerso
+	ln -fs $< pyaerso.so
+	python3 bixler.py out_bixler.csv
 
 # Generate output for comparison
 out_rs.csv: ../target/release/libpyaerso.so mxs.py

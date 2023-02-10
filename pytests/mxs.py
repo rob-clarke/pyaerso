@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from calendar import c
 import math
 
 from numpy import mean, var
@@ -17,11 +16,13 @@ def calc_state(alpha,airspeed,combined=True):
         return [0,0,0], [u,0,w], orientation, [0,0,0]
 
 # Trim points airspeed(m/s): (alpha(deg),elev(deg),throttle)
-trim_points = {15: (2.0574563762079516, -6.8727513934777225, 0.24329486036084907),
- 17.5: (1.0706920728883487, -7.920398290900842, 0.32366463553969765),
- 20: (0.4300108890771458, -8.847841922284317, 0.43160143104358356),
- 22.5: (-0.00919178945532153, -9.600216932754634, 0.5593081244658515),
- 25: (-0.3232762564889445, -9.890387987246884, 0.700473854936423)}
+trim_points = {
+    15.0: ( 2.0574563762079516,  -6.8727513934777225, 0.24329486036084907),
+    17.5: ( 1.0706920728883487,  -7.920398290900842,  0.32366463553969765),
+    20.0: ( 0.4300108890771458,  -8.847841922284317,  0.43160143104358356),
+    22.5: (-0.00919178945532153, -9.600216932754634,  0.5593081244658515 ),
+    25.0: (-0.3232762564889445,  -9.890387987246884,  0.700473854936423  )
+}
 
 
 selected_trim_point = 17.5
@@ -276,54 +277,54 @@ def get_cmqd_dw(alpha, q, V=15):
 
 # print(vehicle.airstate)
 if __name__ == "__main__":
-    import sys
-    import numpy as np
-    import matplotlib.pyplot as plt
+    # import sys
+    # import numpy as np
+    # import matplotlib.pyplot as plt
     
-    alphas = np.linspace(-180,180,200)
+    # alphas = np.linspace(-180,180,200)
     
-    # cds = np.zeros_like(alphas)
-    # for i,alpha in enumerate(alphas):
-    #     cds[i] = c_dta(math.radians(alpha))
-    # plt.plot(alphas,cds)
+    # # cds = np.zeros_like(alphas)
+    # # for i,alpha in enumerate(alphas):
+    # #     cds[i] = c_dta(math.radians(alpha))
+    # # plt.plot(alphas,cds)
 
-    qs = np.linspace(1,60,3)
-    cmqs = np.zeros((len(qs),len(alphas),3))
-    c_ltas = np.zeros((len(qs),len(alphas),2))
-    alpha_qs = np.zeros((len(qs),len(alphas)))
+    # qs = np.linspace(1,60,3)
+    # cmqs = np.zeros((len(qs),len(alphas),3))
+    # c_ltas = np.zeros((len(qs),len(alphas),2))
+    # alpha_qs = np.zeros((len(qs),len(alphas)))
     
-    for j,alpha in enumerate(alphas):
-        for i,q in enumerate(qs):
-            cmqs[i,j,0] = get_cmq(math.radians(alpha),math.radians(q))
-            cmqs[i,j,1] = get_cmqd(math.radians(alpha),math.radians(q))
-            cmqs[i,j,2] = get_cmqd_dw(math.radians(alpha),math.radians(q))
-            alpha_q = get_alpha_q(math.radians(alpha),math.radians(q))
-            c_ltas[i,j,0] = c_lta(alpha_q) - c_lta(math.radians(alpha))
-            c_ltas[i,j,1] = math.cos(alpha_q) * c_lta(alpha_q) + math.sin(alpha_q) * c_dta(alpha_q) \
-                            - math.cos(math.radians(alpha)) * c_lta(math.radians(alpha)) - math.sin(math.radians(alpha)) * c_dta(math.radians(alpha))
-            alpha_qs[i,j] = alpha_q
+    # for j,alpha in enumerate(alphas):
+    #     for i,q in enumerate(qs):
+    #         cmqs[i,j,0] = get_cmq(math.radians(alpha),math.radians(q))
+    #         cmqs[i,j,1] = get_cmqd(math.radians(alpha),math.radians(q))
+    #         cmqs[i,j,2] = get_cmqd_dw(math.radians(alpha),math.radians(q))
+    #         alpha_q = get_alpha_q(math.radians(alpha),math.radians(q))
+    #         c_ltas[i,j,0] = c_lta(alpha_q) - c_lta(math.radians(alpha))
+    #         c_ltas[i,j,1] = math.cos(alpha_q) * c_lta(alpha_q) + math.sin(alpha_q) * c_dta(alpha_q) \
+    #                         - math.cos(math.radians(alpha)) * c_lta(math.radians(alpha)) - math.sin(math.radians(alpha)) * c_dta(math.radians(alpha))
+    #         alpha_qs[i,j] = alpha_q
 
-    for i,q in enumerate(qs):
-        # plt.plot(alphas,cmqs[i,:,0])
-        # plt.plot(alphas,cmqs[i,:,1])
-        plt.plot(alphas,cmqs[i,:,2])
-    plt.legend(list(map(lambda v: str(v),qs)))
-    plt.grid(True,'both')
+    # for i,q in enumerate(qs):
+    #     # plt.plot(alphas,cmqs[i,:,0])
+    #     # plt.plot(alphas,cmqs[i,:,1])
+    #     plt.plot(alphas,cmqs[i,:,2])
+    # plt.legend(list(map(lambda v: str(v),qs)))
+    # plt.grid(True,'both')
     
-    plt.figure()
-    for i,q in enumerate(qs):
-        plt.plot(alphas,np.degrees(alpha_qs[i,:]))
-    plt.legend(list(map(lambda v: str(v),qs)))
+    # plt.figure()
+    # for i,q in enumerate(qs):
+    #     plt.plot(alphas,np.degrees(alpha_qs[i,:]))
+    # plt.legend(list(map(lambda v: str(v),qs)))
     
-    plt.figure()
-    for i,q in enumerate(qs):
-        # plt.plot(alphas,c_ltas[i,:,0])
-        plt.plot(alphas,c_ltas[i,:,1])
-    plt.legend(list(map(lambda v: str(v),qs)))
+    # plt.figure()
+    # for i,q in enumerate(qs):
+    #     # plt.plot(alphas,c_ltas[i,:,0])
+    #     plt.plot(alphas,c_ltas[i,:,1])
+    # plt.legend(list(map(lambda v: str(v),qs)))
     
-    plt.show()
+    # plt.show()
     
-    sys.exit(0)
+    # sys.exit(0)
     
     scale = 1
     deltaT = 0.01/scale

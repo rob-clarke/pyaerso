@@ -64,10 +64,21 @@ impl PyBody {
             body: aerso::Body::new_from_statevector(mass,inertia,statevector)
         }
     }
-    
+
     fn step(&mut self, forces_py: Vec<PyRef<PyForce>>, torques_py: Vec<PyRef<PyTorque>>, delta_t: FpR) {
         let (forces,torques) = crate::force_torque::convert_force_torque(forces_py, torques_py);        
         self.body.step(&forces[..], &torques[..], delta_t);
     }
-   
+
+    fn __str__(&self) -> String {
+        String::from(
+            format!("Body()")
+        )
+    }
+
+    fn __repr__(&self) -> String {
+        String::from(
+            format!("Body()")
+        )
+    }
 }
